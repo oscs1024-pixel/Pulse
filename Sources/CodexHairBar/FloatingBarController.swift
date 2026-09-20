@@ -7,6 +7,7 @@ final class FloatingBarController {
     private let panel: NSPanel
     private let settings: AppSettings
     private var cancellables: Set<AnyCancellable> = []
+    private var screenObserver: NSObjectProtocol?
 
     init(store: UsageStore, settings: AppSettings, openSettings: @escaping () -> Void) {
         self.settings = settings
@@ -38,7 +39,7 @@ final class FloatingBarController {
         position()
         applyVisibility()
 
-        NotificationCenter.default.addObserver(
+        screenObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification,
             object: nil,
             queue: .main
