@@ -1,11 +1,12 @@
 import AppKit
+import Combine
 import SwiftUI
 
 @MainActor
 final class FloatingBarController {
     private let panel: NSPanel
     private let settings: AppSettings
-    private var settingsObserver: NSObjectProtocol?
+    private var cancellables: Set<AnyCancellable> = []
 
     init(store: UsageStore, settings: AppSettings, openSettings: @escaping () -> Void) {
         self.settings = settings
@@ -42,18 +43,21 @@ final class FloatingBarController {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in self?.position() }
+            Task { @MainActor in
+                self?.position()
+            }
         }
 
         settings.$barVisible
             .removeDuplicates()
+            .receive(on: RunLoop.main)
             .sink { [weak self] _ in
-                self?.applyVisibility()
+                MainActor.assumeIsolated {
+                    self?.applyVisibility()
+                }
             }
             .store(in: &cancellables)
     }
-
-    private var cancellables: Set<AnyCancellable> = []
 
     func toggle() {
         settings.barVisible.toggle()
