@@ -14,10 +14,6 @@ final class UsageStore: ObservableObject {
         self.settings = settings
     }
 
-    deinit {
-        refreshLoop?.cancel()
-    }
-
     func start() {
         guard refreshLoop == nil else { return }
         refreshLoop = Task { [weak self] in
