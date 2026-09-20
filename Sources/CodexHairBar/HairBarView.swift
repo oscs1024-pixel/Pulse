@@ -1,4 +1,4 @@
-import SwiftUI
+import AppKit\nimport SwiftUI
 
 struct HairBarView: View {
     @ObservedObject var store: UsageStore
