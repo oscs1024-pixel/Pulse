@@ -96,6 +96,7 @@ struct AlertMemory: Codable, Sendable, Equatable {
         /// The reading the previous pass saw, so a turnover can be spotted.
         var fraction = 0.0
         var resetsAt: Date?
+        var cycleID: String?
     }
 
     struct Account: Codable, Sendable, Equatable {
@@ -274,9 +275,7 @@ struct AlertMemory: Codable, Sendable, Equatable {
             return produced
         }
 
-        for window in reading.windows {
-            // A previously live snapshot can outlast its window between polls.
-            guard window.resetsAt.map({ $0 > now }) ?? true else { continue }
+        for window in reading.current(at: now)?.windows ?? [] {
             let seen = record.windows[window.id]
             // First sighting starts at nothing announced, so a limit that is
             // *already* past the line is said once, now.
@@ -294,7 +293,9 @@ struct AlertMemory: Codable, Sendable, Equatable {
             // figure that has been true for days.
             var memory = seen ?? Window()
 
-            if let seen {
+            if let cycle = window.cycleID, let previous = seen?.cycleID, cycle != previous {
+                memory.announced = 0
+            } else if let seen {
                 // Said only when the evidence is unambiguous — the rule, and
                 // why it is that rule, live on `UsageWindow.hasTurnedOver`.
                 // The rail's mark asks the same question of the same code.
@@ -332,6 +333,7 @@ struct AlertMemory: Codable, Sendable, Equatable {
 
             memory.fraction = window.usedFraction
             memory.resetsAt = window.resetsAt
+            if let cycle = window.cycleID { memory.cycleID = cycle }
             record.windows[window.id] = memory
         }
 
